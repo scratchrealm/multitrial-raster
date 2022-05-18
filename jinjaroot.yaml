@@ -1,0 +1,8 @@
+projectName: multitrial_raster
+pythonProjectVersion: 0.1.0
+projectAuthor:
+projectAuthorEmail:
+projectDescription: Multi-trial spike raster plot
+projectUrl:
+projectBugTrackerUrl:
+pythonPackageDir: .
