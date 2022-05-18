@@ -2,7 +2,7 @@
 
 set -ex
 
-TARGET=gs://figurl/visualization-template-1
+TARGET=gs://figurl/multitrial-raster-1
 
 yarn build
 
