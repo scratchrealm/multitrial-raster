@@ -1,6 +1,5 @@
 import { FunctionComponent, useMemo } from 'react';
 import { validateObject } from '../figurl';
-import { isString } from '../figurl/viewInterface/validateObject';
 
 export type MultitrialRasterData = {
     spike_time: number[]
@@ -31,12 +30,12 @@ const MainComponent: FunctionComponent<Props> = ({data}) => {
     const {spike_time, trial_idx, neuron_idx} = data
     const neuronIds = useMemo(() => (
         [...new Set(neuron_idx)].sort((a, b) => (a - b))
-    ), [])
+    ), [neuron_idx])
     const trialIds = useMemo(() => (
         [...new Set(trial_idx)].sort((a, b) => (a - b))
-    ), [])
+    ), [trial_idx])
     const spikeTrainsByNeuronTrial = useMemo(() => {
-        // improve this code by using maps
+        // initiate structure
         const spikeTrainsByNeuronTrial: SpikeTrainsByNeuronTrial = {}
         for (let neuronId of neuronIds) {
             spikeTrainsByNeuronTrial[neuronId] = {}
@@ -44,11 +43,12 @@ const MainComponent: FunctionComponent<Props> = ({data}) => {
                 spikeTrainsByNeuronTrial[neuronId][trialId] = []
             }
         }
+        // fill in data
         for (let i = 0; i < spike_time.length; i++) {
             spikeTrainsByNeuronTrial[neuron_idx[i]][trial_idx[i]].push(spike_time[i])
         }
         return spikeTrainsByNeuronTrial
-    }, [])
+    }, [neuronIds, trialIds, neuron_idx, spike_time, trial_idx])
     return (
         <div>
             <h3>Multiscale raster</h3>
