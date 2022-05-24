@@ -151,8 +151,8 @@ const paintPanel = (context: CanvasRenderingContext2D, props: PanelProps) => {
     context.lineWidth = 3.0
     context.beginPath()
     for (const s of props.pixelSpikes) {
-        context.moveTo(s, 0)
-        context.lineTo(s, props.height)
+        context.moveTo(s, -2)
+        context.lineTo(s, props.height + 2)
     }
     context.stroke()
 }
