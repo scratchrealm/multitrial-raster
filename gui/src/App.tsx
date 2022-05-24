@@ -1,13 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import RecordingSelectionContext, { defaultRecordingSelection, recordingSelectionReducer } from 'contexts/RecordingSelectionContext';
+import React, { useEffect, useReducer, useState } from 'react';
 import './App.css';
 import { getFigureData, useWindowDimensions } from './figurl';
-import MainComponent, { isMultitrialRasterData, MultitrialRasterData } from './MainComponent/MainComponent';
+import MultiTrialRaster, { isMultitrialRasterData, MultitrialRasterData } from './MultiTrialRaster/MultiTrialRaster';
 
 
 function App() {
   let [data, setData] = useState<MultitrialRasterData>()
   const [errorMessage, setErrorMessage] = useState<string>()
   const {width, height} = useWindowDimensions()
+
+  const [recordingSelection, recordingSelectionDispatch] = useReducer(recordingSelectionReducer, defaultRecordingSelection)
+
 
   useEffect(() => {
     getFigureData().then((data: any) => {
@@ -32,11 +36,13 @@ function App() {
   }
 
   return (
-    <MainComponent
-      data={data}
-      width={width - 10}  // we don't want the scrollbar to appear even when the menu is opened
-      height={height - 5} // we don't want the scrollbar to appear
-    />
+    <RecordingSelectionContext.Provider value={{recordingSelection, recordingSelectionDispatch}}>
+        <MultiTrialRaster
+            data={data}
+            width={width - 10}  // we don't want the scrollbar to appear even when the menu is opened
+            height={height - 5} // we don't want the scrollbar to appear
+        />
+    </RecordingSelectionContext.Provider>
   )
 }
 
