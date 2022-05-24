@@ -89,20 +89,9 @@ const MultiTrialRasterControls: FunctionComponent<MultiTrialRasterControlsProps>
                 </label>
             </span>
             <span className="form-check">
-                <label>
-                    <input
-                        type="radio"
-                        name="mode-select"
-                        value="slicing_by_trial"
-                        checked={mode === 'slicing_by_trial'}
-                        className="form-check-input"
-                        onChange={handleModeChange}
-                    />
-                    Show Neurons vs Time
-                </label>
-            </span>
-            <span className="form-check">
-                Selected Neuron ID:&nbsp;
+                <span style={{color: mode === 'slicing_by_neuron' ? 'black' : 'gray', paddingRight: 15}}>
+                    Selected Neuron ID:
+                </span>
                 <Slider
                     style={{width: 200, paddingBottom: 6}}
                     min={0}
@@ -123,7 +112,22 @@ const MultiTrialRasterControls: FunctionComponent<MultiTrialRasterControlsProps>
                 />
             </span>
             <span className="form-check">
-                Selected Trial ID:&nbsp;
+                <label>
+                    <input
+                        type="radio"
+                        name="mode-select"
+                        value="slicing_by_trial"
+                        checked={mode === 'slicing_by_trial'}
+                        className="form-check-input"
+                        onChange={handleModeChange}
+                    />
+                    Show Neurons vs Time
+                </label>
+            </span>
+            <span className="form-check">
+                <span style={{color: mode === 'slicing_by_trial' ? 'black' : 'gray', paddingRight: 15}}>
+                    Selected Trial ID:
+                </span>
                 <Slider
                     style={{width: 200, paddingBottom: 6}}
                     min={0}
