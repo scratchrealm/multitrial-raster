@@ -1,3 +1,4 @@
+import { Slider } from '@material-ui/core';
 import React, { FunctionComponent, useCallback, useMemo } from 'react';
 import Select from 'react-select';
 import { SlicingMode } from './MultiTrialRaster';
@@ -48,6 +49,24 @@ const MultiTrialRasterControls: FunctionComponent<MultiTrialRasterControlsProps>
         }
     }, [distinctTrialIds, setSelectedTrial])
 
+    const handleSelectedNeuronSliderChange = useCallback((evt: any, value: number | number[]) => {
+        setSelectedNeuron(distinctNeuronIds[value as any as number])
+    }, [setSelectedNeuron, distinctNeuronIds])
+
+    const handleSelectedTrialSliderChange = useCallback((evt: any, value: number | number[]) => {
+        setSelectedTrial(distinctTrialIds[value as any as number])
+    }, [setSelectedTrial, distinctTrialIds])
+
+    const selectedNeuronIndex = useMemo(() => {
+        if (!selectedNeuron) return undefined
+        return distinctNeuronIds.find(e => (e ===selectedNeuron))
+    }, [distinctNeuronIds, selectedNeuron])
+
+    const selectedTrialIndex = useMemo(() => {
+        if (!selectedTrial) return undefined
+        return distinctTrialIds.find(e => (e ===selectedTrial))
+    }, [distinctTrialIds, selectedTrial])
+
     const neuronOptions = useMemo(() => mapNumbersToDropdownOptions(distinctNeuronIds), [distinctNeuronIds])
     const trialOptions = useMemo(() => mapNumbersToDropdownOptions(distinctTrialIds), [distinctTrialIds])
 
@@ -83,7 +102,15 @@ const MultiTrialRasterControls: FunctionComponent<MultiTrialRasterControlsProps>
                 </label>
             </span>
             <span className="form-check">
-                Selected Neuron ID:
+                Selected Neuron ID:&nbsp;
+                <Slider
+                    style={{width: 200, paddingBottom: 6}}
+                    min={0}
+                    max={distinctNeuronIds.length - 1}
+                    value={selectedNeuronIndex}
+                    onChange={handleSelectedNeuronSliderChange}
+                    disabled={mode !== 'slicing_by_neuron'}
+                />
                 <Select
                     value={selectedNeuronOption}
                     options={neuronOptions}
@@ -92,10 +119,19 @@ const MultiTrialRasterControls: FunctionComponent<MultiTrialRasterControlsProps>
                     className="dropdown-inline"
                     components={{ IndicatorsContainer: () => null }}
                     menuPlacement="top"
+                    isDisabled={mode !== 'slicing_by_neuron'}
                 />
             </span>
             <span className="form-check">
-                Selected Trial ID:
+                Selected Trial ID:&nbsp;
+                <Slider
+                    style={{width: 200, paddingBottom: 6}}
+                    min={0}
+                    max={distinctTrialIds.length - 1}
+                    value={selectedTrialIndex}
+                    onChange={handleSelectedTrialSliderChange}
+                    disabled={mode !== 'slicing_by_trial'}
+                />
                 <Select
                     value={selectedTrialOption}
                     options={trialOptions}
@@ -104,6 +140,7 @@ const MultiTrialRasterControls: FunctionComponent<MultiTrialRasterControlsProps>
                     className="dropdown-inline"
                     components={{ IndicatorsContainer: () => null }}
                     menuPlacement="top"
+                    isDisabled={mode !== 'slicing_by_trial'}
                 />
             </span>
         </div>
