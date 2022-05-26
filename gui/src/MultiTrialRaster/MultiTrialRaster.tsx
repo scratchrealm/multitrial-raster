@@ -2,6 +2,7 @@ import colorForUnitId from 'common/ColorHandling/colorForUnitId';
 import TimeScrollView, { use1dTimeToPixelMatrix, useMultiplePanelDimensions, usePixelsPerSecond, useTimeseriesMargins } from 'common/TimeScrollView/TimeScrollView';
 import { DefaultToolbarWidth } from 'common/TimeWidgetToolbarEntries';
 import { useRecordingSelectionTimeInitialization, useTimeRange } from 'contexts/RecordingSelectionContext';
+import { optional } from 'figurl/viewInterface/validateObject';
 import math, { matrix, multiply } from 'mathjs';
 import React, { FunctionComponent, useMemo, useState } from 'react';
 import { validateObject } from '../figurl';
@@ -17,19 +18,22 @@ export type MultitrialRasterData = {
     spike_time: number[]
     trial_idx: number[]
     neuron_idx: number[]
+    factor_idx?: number[]
     timeseriesLayoutOpts?: TimeseriesLayoutOpts
 }
 export const isMultitrialRasterData = (x: any): x is MultitrialRasterData => {
     return validateObject(x, {
         spike_time: () => (true),
         trial_idx: () => (true),
-        neuron_idx: () => (true)
+        neuron_idx: () => (true),
+        factor_idx: optional(() => (true))
     })
 }
 
 export type RPPlotData = {
     indexId: number
     spikeTimesSec: number[]
+    factors: number[]
 }
 
 type MultiTrialRasterProps = {
@@ -40,7 +44,10 @@ type MultiTrialRasterProps = {
 
 type SpikeTrainsByNeuronTrial = {
     [neuronId: number]: {
-        [trialId: number]: number[]
+        [trialId: number]: {
+            times: number[],
+            factors: number[]
+        }
     }
 }
 
@@ -50,21 +57,25 @@ export type PanelProps = {
     pixelSpikes: number[]
 }
 
-const assembleSpikeTrainTensor = (distinctNeuronIds: number[], distinctTrialIds: number[], neuronIdx: number[], trialIdx: number[], spikes: number[]): SpikeTrainsByNeuronTrial => {
+const assembleSpikeTrainTensor = (distinctNeuronIds: number[], distinctTrialIds: number[], neuronIdx: number[], trialIdx: number[], spikes: number[], factorIdx?: number[]): SpikeTrainsByNeuronTrial => {
     const spikeTrainsByNeuronTrial: SpikeTrainsByNeuronTrial = {}
     distinctNeuronIds.forEach(neuronId => {
         spikeTrainsByNeuronTrial[neuronId] = {}
         distinctTrialIds.forEach(trialId => {
-            spikeTrainsByNeuronTrial[neuronId][trialId] = []
+            spikeTrainsByNeuronTrial[neuronId][trialId] = {
+                times: [],
+                factors: []
+            }
         })
     })
     spikes.forEach((time, i) => {
-        spikeTrainsByNeuronTrial[neuronIdx[i]][trialIdx[i]].push(time)
+        spikeTrainsByNeuronTrial[neuronIdx[i]][trialIdx[i]].times.push(time)
+        spikeTrainsByNeuronTrial[neuronIdx[i]][trialIdx[i]].factors.push(factorIdx ? factorIdx[i] : 0)
     })
     return spikeTrainsByNeuronTrial
 }
 
-const useSpikeTensor = (spike_time: number[], trial_idx: number[], neuron_idx: number[]) => {
+const useSpikeTensor = (spike_time: number[], trial_idx: number[], neuron_idx: number[], factor_idx?: number[]) => {
     const neuronIds = useMemo(() => (
         [...new Set(neuron_idx)].sort((a, b) => (a - b))
     ), [neuron_idx])
@@ -84,8 +95,8 @@ const useSpikeTensor = (spike_time: number[], trial_idx: number[], neuron_idx: n
     }, [spike_time])
     // const baseStartTime = Math.min(...spike_time) //useMemo(() => Math.min(...spike_time), [spike_time])
     // const baseEndTime = useMemo(() => Math.max(...spike_time), [spike_time])
-    const spikeTrainsByNeuronTrial = useMemo(() => assembleSpikeTrainTensor(neuronIds, trialIds, neuron_idx, trial_idx, spike_time),
-        [neuronIds, neuron_idx, spike_time, trialIds, trial_idx])
+    const spikeTrainsByNeuronTrial = useMemo(() => assembleSpikeTrainTensor(neuronIds, trialIds, neuron_idx, trial_idx, spike_time, factor_idx),
+        [neuronIds, neuron_idx, spike_time, trialIds, trial_idx, factor_idx])
     return {
         distinctNeuronIds: neuronIds,
         distinctTrialIds: trialIds,
@@ -102,7 +113,8 @@ const useTensorSlice = (mode: SlicingMode, selectedId: number, spikeTensor: Spik
             const res = Object.keys(slice).map(id => {
                 return {
                     indexId: Number(id),
-                    spikeTimesSec: slice[Number(id)]
+                    spikeTimesSec: slice[Number(id)].times,
+                    factors: slice[Number(id)].factors
                 }
             })
             return res
@@ -111,7 +123,8 @@ const useTensorSlice = (mode: SlicingMode, selectedId: number, spikeTensor: Spik
                 neuronId => {
                     return {
                         indexId: neuronId,
-                        spikeTimesSec: spikeTensor[neuronId][selectedId]
+                        spikeTimesSec: spikeTensor[neuronId][selectedId].times,
+                        factors: spikeTensor[neuronId][selectedId].factors
                     }
                 }
             )
@@ -162,9 +175,9 @@ export type SlicingMode = 'slicing_by_neuron' | 'slicing_by_trial'
 const panelSpacings = [4, 0] // per-neuron, per-trial
 
 const MultiTrialRaster: FunctionComponent<MultiTrialRasterProps> = ({data, width, height}) => {
-    const {spike_time, trial_idx, neuron_idx, timeseriesLayoutOpts} = data
+    const {spike_time, trial_idx, neuron_idx, factor_idx, timeseriesLayoutOpts} = data
     const heightExBottomControls = useMemo(() => height - 40, [height])
-    const { distinctNeuronIds, distinctTrialIds, baseStartTime, baseEndTime, spikeTensor } = useSpikeTensor(spike_time, trial_idx, neuron_idx)
+    const { distinctNeuronIds, distinctTrialIds, baseStartTime, baseEndTime, spikeTensor } = useSpikeTensor(spike_time, trial_idx, neuron_idx, factor_idx)
     // const [mode, setMode] = useState<SlicingMode>('slicing_by_trial')
     const [mode, setMode] = useState<SlicingMode>('slicing_by_neuron')
     const [selectedNeuron, setSelectedNeuron] = useState<number>(distinctNeuronIds[0])
@@ -193,6 +206,9 @@ const MultiTrialRaster: FunctionComponent<MultiTrialRasterProps> = ({data, width
     const rasterData = usePixelPanels(tensorSlice, visibleTimeStartSeconds ?? baseStartTime, visibleTimeEndSeconds ?? baseEndTime, timeToPixelMatrix, panelHeight)
 
     const panelSpacing = useMemo(() => mode === 'slicing_by_trial' ? panelSpacings[0] : panelSpacings[1], [mode])
+
+    console.info('TENSOR SLICE:')
+    console.info(tensorSlice)
 
     const plotData = useMemo(() => {
         return {
