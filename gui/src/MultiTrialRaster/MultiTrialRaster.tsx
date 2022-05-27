@@ -204,6 +204,7 @@ const MultiTrialRaster: FunctionComponent<MultiTrialRasterProps> = ({data, width
     const heightExBottomControls = useMemo(() => height - 40, [height])
     const { distinctNeuronIds, distinctTrialIds, baseStartTime, baseEndTime, spikeTensor } = useSpikeTensor(spike_time, trial_idx, neuron_idx, factor_idx)
     const [mode, setMode] = useState<SlicingMode>('slicing_by_neuron')
+    const [colorSource, setColorSource] = useState<number>(1)
     const [selectedNeuron, setSelectedNeuron] = useState<number>(distinctNeuronIds[0])
     const [selectedTrial, setSelectedTrial] = useState<number>(distinctTrialIds[0])
     useRecordingSelectionTimeInitialization(baseStartTime, baseEndTime)
@@ -227,7 +228,16 @@ const MultiTrialRaster: FunctionComponent<MultiTrialRasterProps> = ({data, width
 
     const panelHeight = useMemo(() => mode === 'slicing_by_neuron' ? perTrialPanelHeight : mode === 'slicing_by_trial' ? perNeuronPanelHeight : 0, [mode, perNeuronPanelHeight, perTrialPanelHeight])
     const tensorSlice = useTensorSlice(mode, mode === 'slicing_by_neuron' ? selectedNeuron : selectedTrial, spikeTensor)
-    const rasterData = usePixelPanels(tensorSlice, visibleTimeStartSeconds ?? baseStartTime, visibleTimeEndSeconds ?? baseEndTime, timeToPixelMatrix, panelHeight, colorForSpikeIndex)
+    // Ideally this would be selecting among the different metadata series
+    const spikeColorFunction = useMemo(() => {
+        switch(colorSource) {
+            case 0:
+                return undefined
+            case 1:
+                return colorForSpikeIndex
+        }
+    }, [colorSource])
+    const rasterData = usePixelPanels(tensorSlice, visibleTimeStartSeconds ?? baseStartTime, visibleTimeEndSeconds ?? baseEndTime, timeToPixelMatrix, panelHeight, spikeColorFunction)
 
     const panelSpacing = useMemo(() => mode === 'slicing_by_trial' ? panelSpacings[0] : panelSpacings[1], [mode])
 
@@ -258,11 +268,13 @@ const MultiTrialRaster: FunctionComponent<MultiTrialRasterProps> = ({data, width
             />
             <MultiTrialRasterControls
                 mode={mode}
+                colorMode={colorSource}
                 selectedNeuron={selectedNeuron}
                 selectedTrial={selectedTrial}
                 distinctNeuronIds={distinctNeuronIds}
                 distinctTrialIds={distinctTrialIds}
                 setMode={setMode}
+                setColorMode={setColorSource}
                 setSelectedNeuron={setSelectedNeuron}
                 setSelectedTrial={setSelectedTrial}
             />

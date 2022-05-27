@@ -1,4 +1,4 @@
-import { Slider } from '@material-ui/core';
+import { Checkbox, Slider } from '@material-ui/core';
 import { max } from 'mathjs';
 import React, { FunctionComponent, useCallback, useMemo } from 'react';
 import Select from 'react-select';
@@ -7,11 +7,13 @@ import './MultiTrialRasterControls.css';
 
 type MultiTrialRasterControlsProps = {
     mode: SlicingMode
+    colorMode: number
     selectedNeuron: number
     selectedTrial: number
     distinctNeuronIds: number[]
     distinctTrialIds: number[]
     setMode: React.Dispatch<React.SetStateAction<SlicingMode>>
+    setColorMode: React.Dispatch<React.SetStateAction<number>>
     setSelectedNeuron: React.Dispatch<React.SetStateAction<number>>
     setSelectedTrial: React.Dispatch<React.SetStateAction<number>>
 }
@@ -27,7 +29,7 @@ const mapNumbersToDropdownOptions = (numbers: number[]) => {
 }
 
 const MultiTrialRasterControls: FunctionComponent<MultiTrialRasterControlsProps> = (props: MultiTrialRasterControlsProps) => {
-    const { mode, selectedNeuron, selectedTrial, distinctNeuronIds, distinctTrialIds, setMode, setSelectedNeuron, setSelectedTrial } = props
+    const { mode, colorMode, selectedNeuron, selectedTrial, distinctNeuronIds, distinctTrialIds, setMode, setColorMode, setSelectedNeuron, setSelectedTrial } = props
 
     const handleModeChange = useCallback((changeEvent: React.ChangeEvent<HTMLInputElement>) => {
         const newVal = changeEvent.target.value === 'slicing_by_neuron'
@@ -67,6 +69,14 @@ const MultiTrialRasterControls: FunctionComponent<MultiTrialRasterControlsProps>
 
     return (
         <div id='controls' className='controls-panel'>
+            <span className="form-check">
+                <Checkbox
+                    checked={!(colorMode === 0)}
+                    onChange={(e, checked) => setColorMode(checked ? 1 : 0)}
+                    inputProps={{ 'aria-label': 'controlled' }}
+                />
+                Use factor color series
+            </span>
             <span className="form-check">
                 <label>
                     <input
