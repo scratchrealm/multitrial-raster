@@ -24,7 +24,7 @@ class MultitrialRaster:
 
             # Prepare the figurl Figure
             F = fig.Figure(
-                view_url='gs://figurl/multitrial-raster-1',
+                view_url='gs://figurl/multitrial-raster-2',
                 data=data
             )
             url = F.url(label=label)
