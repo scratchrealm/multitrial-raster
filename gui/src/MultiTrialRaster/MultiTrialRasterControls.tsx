@@ -1,4 +1,5 @@
-import { Slider } from '@material-ui/core';
+import { Checkbox, Slider } from '@material-ui/core';
+import { max } from 'mathjs';
 import React, { FunctionComponent, useCallback, useMemo } from 'react';
 import Select from 'react-select';
 import { SlicingMode } from './MultiTrialRaster';
@@ -6,11 +7,13 @@ import './MultiTrialRasterControls.css';
 
 type MultiTrialRasterControlsProps = {
     mode: SlicingMode
+    colorMode: number
     selectedNeuron: number
     selectedTrial: number
     distinctNeuronIds: number[]
     distinctTrialIds: number[]
     setMode: React.Dispatch<React.SetStateAction<SlicingMode>>
+    setColorMode: React.Dispatch<React.SetStateAction<number>>
     setSelectedNeuron: React.Dispatch<React.SetStateAction<number>>
     setSelectedTrial: React.Dispatch<React.SetStateAction<number>>
 }
@@ -18,15 +21,15 @@ type MultiTrialRasterControlsProps = {
 const mapNumbersToDropdownOptions = (numbers: number[]) => {
     // Could reinforce sorting here
     return numbers.map(
-        number => {return {
-            value: number,
+        (number, index) => {return {
+            value: index,
             label: `${number}`
         }}
     )
 }
 
 const MultiTrialRasterControls: FunctionComponent<MultiTrialRasterControlsProps> = (props: MultiTrialRasterControlsProps) => {
-    const { mode, selectedNeuron, selectedTrial, distinctNeuronIds, distinctTrialIds, setMode, setSelectedNeuron, setSelectedTrial } = props
+    const { mode, colorMode, selectedNeuron, selectedTrial, distinctNeuronIds, distinctTrialIds, setMode, setColorMode, setSelectedNeuron, setSelectedTrial } = props
 
     const handleModeChange = useCallback((changeEvent: React.ChangeEvent<HTMLInputElement>) => {
         const newVal = changeEvent.target.value === 'slicing_by_neuron'
@@ -38,43 +41,42 @@ const MultiTrialRasterControls: FunctionComponent<MultiTrialRasterControlsProps>
     }, [setMode])
 
     const handleSelectedNeuronChange = useCallback((newOption: any) => {
-        if (distinctNeuronIds.includes(newOption.value)) {
-            setSelectedNeuron(newOption.value)
-        }
+        setSelectedNeuron(distinctNeuronIds[newOption.value])
     }, [distinctNeuronIds, setSelectedNeuron])
 
     const handleSelectedTrialChange = useCallback((newOption: any) => {
-        if (distinctTrialIds.includes(newOption.value)) {
-            setSelectedTrial(newOption.value)
-        }
+        setSelectedTrial(distinctTrialIds[newOption.value])
     }, [distinctTrialIds, setSelectedTrial])
 
     const handleSelectedNeuronSliderChange = useCallback((evt: any, value: number | number[]) => {
-        setSelectedNeuron(distinctNeuronIds[value as any as number])
-    }, [setSelectedNeuron, distinctNeuronIds])
+        handleSelectedNeuronChange({value})
+    }, [handleSelectedNeuronChange])
 
     const handleSelectedTrialSliderChange = useCallback((evt: any, value: number | number[]) => {
-        setSelectedTrial(distinctTrialIds[value as any as number])
-    }, [setSelectedTrial, distinctTrialIds])
+        handleSelectedTrialChange({value})
+    }, [handleSelectedTrialChange])
 
     const selectedNeuronIndex = useMemo(() => {
-        if (!selectedNeuron) return undefined
-        return distinctNeuronIds.find(e => (e ===selectedNeuron))
+        return max(distinctNeuronIds.findIndex(e => (e === selectedNeuron)), 0)
     }, [distinctNeuronIds, selectedNeuron])
 
     const selectedTrialIndex = useMemo(() => {
-        if (!selectedTrial) return undefined
-        return distinctTrialIds.find(e => (e ===selectedTrial))
+        return max(distinctTrialIds.findIndex(e => (e === selectedTrial)), 0)
     }, [distinctTrialIds, selectedTrial])
 
     const neuronOptions = useMemo(() => mapNumbersToDropdownOptions(distinctNeuronIds), [distinctNeuronIds])
     const trialOptions = useMemo(() => mapNumbersToDropdownOptions(distinctTrialIds), [distinctTrialIds])
 
-    const selectedNeuronOption = neuronOptions.find(n => n.value === selectedNeuron)
-    const selectedTrialOption = trialOptions.find(n => n.value === selectedTrial)
-
     return (
         <div id='controls' className='controls-panel'>
+            <span className="form-check">
+                <Checkbox
+                    checked={!(colorMode === 0)}
+                    onChange={(e, checked) => setColorMode(checked ? 1 : 0)}
+                    inputProps={{ 'aria-label': 'controlled' }}
+                />
+                Use factor color series
+            </span>
             <span className="form-check">
                 <label>
                     <input
@@ -101,7 +103,7 @@ const MultiTrialRasterControls: FunctionComponent<MultiTrialRasterControlsProps>
                     disabled={mode !== 'slicing_by_neuron'}
                 />
                 <Select
-                    value={selectedNeuronOption}
+                    value={neuronOptions[selectedNeuronIndex]}
                     options={neuronOptions}
                     onChange={handleSelectedNeuronChange}
                     classNamePrefix="dropdown"
@@ -137,7 +139,7 @@ const MultiTrialRasterControls: FunctionComponent<MultiTrialRasterControlsProps>
                     disabled={mode !== 'slicing_by_trial'}
                 />
                 <Select
-                    value={selectedTrialOption}
+                    value={trialOptions[selectedTrialIndex]}
                     options={trialOptions}
                     onChange={handleSelectedTrialChange}
                     classNamePrefix="dropdown"

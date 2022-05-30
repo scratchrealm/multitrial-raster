@@ -2,7 +2,7 @@
 
 set -ex
 
-TARGET=gs://figurl/multitrial-raster-1
+TARGET=gs://figurl/multitrial-raster-2
 
 yarn build
 
